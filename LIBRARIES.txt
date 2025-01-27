@@ -1,0 +1,5 @@
+# Used libraries
+
+## cmdline
+A simple command line parser for C++ (repository)[https://github.com/tanakh/cmdline]
+BSD-3-Clause license
