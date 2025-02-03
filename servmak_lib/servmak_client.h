@@ -17,16 +17,6 @@
 #include <stdlib.h>
 
 
-#define PRINT_STRING_1_ARGS(message)              PrintString(message, 0, 0)
-#define PRINT_STRING_2_ARGS(message, size)        PrintString(message, size, 0)
-#define PRINT_STRING_3_ARGS(message, size, style) PrintString(message, size, style)
-
-#define GET_4TH_ARG(arg1, arg2, arg3, arg4, ...) arg4
-#define PRINT_STRING_MACRO_CHOOSER(...)  GET_4TH_ARG(__VA_ARGS__, PRINT_STRING_3_ARGS, PRINT_STRING_2_ARGS, PRINT_STRING_1_ARGS, )
-
-#define PRINT_STRING(...) PRINT_STRING_MACRO_CHOOSER(__VA_ARGS__)(__VA_ARGS__)
-
-
 #define servmak_request(context, stName, argument, retPtr)\
     servmak_cli_req(context, SERVMAK_STRUCT_ID(stName), argument, SERVMAK_STRUCT_LEN(stName), retPtr, SERVMAK_STRUCT_RET_LEN(stName)) 
 
