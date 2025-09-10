@@ -23,6 +23,8 @@
 #include <exception>
 #include <iostream>
 
+typedef uint8_t void_ret_t;
+
 /*---------------------------------------------------------------------*/
 
 /// @brief Thread Safe Queue
@@ -181,6 +183,12 @@ public:
     template<typename T, typename R>
     void addMethod(std::function<R(T&, uint16_t&)> handler){
       auto _handler =  std::make_shared<ServmakHandler<T, R>>(handler);
+      m_methods.emplace(servmak_struct_id<T>::id, _handler);
+    }
+
+    template<typename T>
+    void addMethod(std::function<void(T&, uint16_t&)> handler){
+      auto _handler =  std::make_shared<ServmakHandler<T, void_ret_t>>(handler);
       m_methods.emplace(servmak_struct_id<T>::id, _handler);
     }
 

@@ -22,8 +22,9 @@ myMethod_ret_t myCustomMethodFn(myMethod& args, uint16_t& client){
     return 'D';
 }
 
-void  myCustomMethodFn2(myOtherMethod& args, uint16_t& client){
+void_ret_t  myCustomMethodFn2(myOtherMethod& args, uint16_t& client){
     std::cout << "calling custom method. Called from port "<<client << ".  value:" << args.var1 << " str:" << args.var1<< std::endl;
+    return 0;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -37,7 +38,7 @@ int server(uint16_t port){
     }
 
     server.addMethod<myMethod, myMethod_ret_t>(myCustomMethodFn);
-    server.addMethod<myOtherMethod, void>(myCustomMethodFn2);
+    server.addMethod<myOtherMethod, void_ret_t>(myCustomMethodFn2);
 
     uint32_t cycleCount = 0;
     while(true){

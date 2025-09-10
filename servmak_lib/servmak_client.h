@@ -16,17 +16,31 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
+#ifndef SERVMAK_CLIENT_OOP
+    #define servmak_request(context, stName, argument, retPtr)\
+        servmak_cli_req(context, SERVMAK_STRUCT_ID(stName), argument, SERVMAK_STRUCT_LEN(stName), retPtr, SERVMAK_STRUCT_RET_LEN(stName)) 
 
-#define servmak_request(context, stName, argument, retPtr)\
-    servmak_cli_req(context, SERVMAK_STRUCT_ID(stName), argument, SERVMAK_STRUCT_LEN(stName), retPtr, SERVMAK_STRUCT_RET_LEN(stName)) 
+    #define servmak_request_void(context, stName, argument)\
+        servmak_cli_req(context, SERVMAK_STRUCT_ID(stName), argument, SERVMAK_STRUCT_LEN(stName), NULL , SERVMAK_STRUCT_RET_LEN(stName)) 
 
-#define servmak_request_void(context, stName, argument)\
-    servmak_cli_req(context, SERVMAK_STRUCT_ID(stName), argument, SERVMAK_STRUCT_LEN(stName), NULL , SERVMAK_STRUCT_RET_LEN(stName)) 
+    #define servmak_request_timeout(context, stName, argument, retPtr, msTimeout)\
+        servmak_cli_req(context, SERVMAK_STRUCT_ID(stName), argument, SERVMAK_STRUCT_LEN(stName), retPtr, SERVMAK_STRUCT_RET_LEN(stName), msTimeout) 
+ 
+    #define servmak_register_callback(context, stName) servmak_cli_addCallback(context, SERVMAK_STRUCT_ID(stName), SERVMAK_HANDLER(stName))
+#else
+    #define servmak_request(stName, argument, retPtr)\
+        servmak_cli_req(&ctx, SERVMAK_STRUCT_ID(stName), argument, SERVMAK_STRUCT_LEN(stName), retPtr, SERVMAK_STRUCT_RET_LEN(stName)) 
 
-#define servmak_request_timeout(context, stName, argument, retPtr, msTimeout)\
-    servmak_cli_req(context, SERVMAK_STRUCT_ID(stName), argument, SERVMAK_STRUCT_LEN(stName), retPtr, SERVMAK_STRUCT_RET_LEN(stName), msTimeout) 
-        
-#define servmak_register_callback(context, stName) servmak_cli_addCallback(context, SERVMAK_STRUCT_ID(stName), SERVMAK_HANDLER(stName))
+    #define servmak_request_void(stName, argument)\
+        servmak_cli_req(&ctx, SERVMAK_STRUCT_ID(stName), argument, SERVMAK_STRUCT_LEN(stName), NULL , SERVMAK_STRUCT_RET_LEN(stName)) 
+
+    #define servmak_request_timeout(stName, argument, retPtr, msTimeout)\
+        servmak_cli_req(&ctx, SERVMAK_STRUCT_ID(stName), argument, SERVMAK_STRUCT_LEN(stName), retPtr, SERVMAK_STRUCT_RET_LEN(stName), msTimeout) 
+
+    #define servmak_register_callback(stName) servmak_cli_addCallback(&ctx, SERVMAK_STRUCT_ID(stName), SERVMAK_HANDLER(stName))
+
+#endif
+
 
 typedef void (*servmak_ftor)(void* arg);
 typedef struct _ServMak_cli_t_ ServMak_cli_t;
@@ -68,6 +82,35 @@ typedef struct _ServMak_cli_t_{
     void * obj_addr = NULL;
 } ServMak_cli_t;
 
+#endif
+
+
+#ifdef SERVMAK_CLIENT_OOP
+class ServmakClient{        
+public:                     
+    ServmakClient(){}
+    ~ServmakClient(){    
+        servmak_cli_shutdown(&ctx); 
+    }
+
+    virtual void registerCallbacks(){}
+
+    bool init(uint16_t serverPort, uint16_t clientPort) {  
+        if( servmak_cli_init(&ctx, "127.0.0.1", serverPort, clientPort) > 0)
+            return false;
+        
+        registerCallbacks();
+        return true;
+    }
+
+    void loop(){
+        servmak_cli_loop(&ctx);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));        
+    }
+
+protected:
+    ServMak_cli_t ctx;
+    };
 #endif
 
 #ifdef SERVMAK_CLIENT_IMPLEMENTATION

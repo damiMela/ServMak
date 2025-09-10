@@ -12,60 +12,37 @@
 //#define SERVMAK_CLI_DEFAULT_TIMEOUT 100 
 
 #define SERVMAK_CLIENT_IMPLEMENTATION
+#define SERVMAK_CLIENT_OOP
 #include <servmak_lib/servmak_client.h>
 
 /*-------------------------------------------------------------------------*/
 
-class ServmakClient{
+class MyClient : public ServmakClient{
 public:
-    ServmakClient(){}
-    ~ServmakClient(){    servmak_cli_shutdown(&ctx);    }
-    bool init(uint16_t serverPort, uint16_t clientPort); 
-    void loop();
+    MyClient() : ServmakClient(){}
+    virtual ~MyClient(){}
+    void registerCallbacks() override;
+
+public:
     int callMethod(uint8_t arg1, const std::string&& arg2);
     bool shouldQuit(){ return m_shouldQuit;}
+
 public:
     SERVMAK_CALLBACK_DECLARE_OBJ(myCallback);
     SERVMAK_CALLBACK_DECLARE_OBJ(myUrgentCallback);
 
 private:
-    ServMak_cli_t ctx;
     static bool m_shouldQuit;
 };
 
-bool ServmakClient::m_shouldQuit = false;
 
-bool ServmakClient::init(uint16_t serverPort, uint16_t clientPort){
-    if( servmak_cli_init(&ctx, "127.0.0.1", serverPort, clientPort) >= 0)
-        return false;
-
-    //------>Register callBack methods
-    servmak_register_callback(&ctx, myCallback);
-    servmak_register_callback(&ctx, myUrgentCallback);
-    return true;
-    
+void MyClient::registerCallbacks(){
+    servmak_register_callback(myCallback);
+    servmak_register_callback(myUrgentCallback);
 }
 
-void ServmakClient::loop(){
-    servmak_cli_loop(&ctx);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-}
-
-int ServmakClient::callMethod(uint8_t arg1, const std::string&& arg2){
-    //------Execute a remote method
-    myMethod myArgs = {arg1};
-    strcpy(myArgs.str, arg2.c_str());
-
-    myMethod_ret_t reply;
-    if(servmak_request(&ctx, myMethod, &myArgs, &reply))
-        std::cout << "GOT DATA OK:" << reply <<  std::endl;
-    else
-        std::cout << "GOT DATA FAIL" << std::endl;
-
-    return reply;
-}
-
-SERVMAK_CALLBACK_IMPLEMENT_OBJ(ServmakClient, myCallback, args,
+bool MyClient::m_shouldQuit = false;
+SERVMAK_CALLBACK_IMPLEMENT_OBJ(MyClient, myCallback, args,
 {
     static uint8_t counter = 0;
     printf("MY CUSTOM CALLBACK %d\n", args->notification);
@@ -76,10 +53,25 @@ SERVMAK_CALLBACK_IMPLEMENT_OBJ(ServmakClient, myCallback, args,
     }
 })
 
-SERVMAK_CALLBACK_IMPLEMENT_OBJ(ServmakClient,myUrgentCallback, args,
+SERVMAK_CALLBACK_IMPLEMENT_OBJ(MyClient, myUrgentCallback, args,
 {
     printf("MY URGENT CALLBACK. level %d. type %d", args->urgencyLevel, args->urgencyType);
 })
+
+
+int MyClient::callMethod(uint8_t arg1, const std::string&& arg2){
+    //------Execute a remote method
+    myMethod myArgs = {arg1};
+    strcpy(myArgs.str, arg2.c_str());
+
+    myMethod_ret_t reply;
+    if(servmak_request(myMethod, &myArgs, &reply))
+        std::cout << "GOT DATA OK:" << reply <<  std::endl;
+    else
+        std::cout << "GOT DATA FAIL" << std::endl;
+
+    return reply;
+}
 
 /*-------------------------------------------------------------------------*/
 int client(uint16_t serverPort, uint16_t clientPort){
@@ -87,7 +79,7 @@ int client(uint16_t serverPort, uint16_t clientPort){
 
 
     //------Start servmak client
-    ServmakClient client;
+    MyClient client;
     if(!client.init(serverPort, clientPort)){
         std::cout << "failed to init client." << servmak_cli_get_error() << std::endl;
         return 1;
@@ -100,7 +92,6 @@ int client(uint16_t serverPort, uint16_t clientPort){
     while(!client.shouldQuit()){
         client.loop();
     }
-
 
     return 0;
 }
